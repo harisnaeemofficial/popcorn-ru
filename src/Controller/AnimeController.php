@@ -36,5 +36,4 @@ class AnimeController extends AbstractController
     {
         return new CacheJsonResponse([]);
     }
-
 }

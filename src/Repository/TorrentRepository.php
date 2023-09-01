@@ -8,6 +8,7 @@ use App\Entity\Torrent\BaseTorrent;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 use Doctrine\ORM\Query\ResultSetMapping;
+use Ramsey\Uuid\UuidInterface;
 
 /**
  * @method BaseTorrent|null find($id, $lockMode = null, $lockVersion = null)
@@ -17,6 +18,8 @@ use Doctrine\ORM\Query\ResultSetMapping;
  */
 class TorrentRepository extends ServiceEntityRepository
 {
+    const TTL = 3600 * 24 * 7;
+
     public function __construct(ManagerRegistry $registry)
     {
         parent::__construct($registry, BaseTorrent::class);
@@ -100,8 +103,12 @@ class TorrentRepository extends ServiceEntityRepository
         if ($onlyActive) {
             $qb->andWhere('t.active = true');
         }
+        $query = $qb->getQuery();
+        if ($onlyActive) {
+            $query->enableResultCache(self::TTL, 'torrents:'.$media->getId()->toString());
+        }
 
-        return $qb->getQuery()->enableResultCache()->getResult();
+        return $query->getResult();
     }
 
     /**
@@ -121,7 +128,13 @@ class TorrentRepository extends ServiceEntityRepository
             $qb->andWhere('t.active = true');
         }
 
-        return $qb->getQuery()->enableResultCache()->getResult();
+        return $qb->getQuery()->enableResultCache(self::TTL, 'torrents:'.$episode->getId()->toString())->getResult();
+    }
+
+    public function clearTorrentsCache(UuidInterface $mediaId): void
+    {
+        $cache = $this->_em->getConfiguration()->getQueryCache();
+        $cache->deleteItem('torrents:'.$mediaId->toString());
     }
 
     /**

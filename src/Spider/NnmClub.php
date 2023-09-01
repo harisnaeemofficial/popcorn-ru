@@ -3,24 +3,19 @@
 namespace App\Spider;
 
 use App\Entity\File;
-use App\Entity\Movie;
 use App\Entity\Torrent\BaseTorrent;
-use App\Entity\Torrent\MovieTorrent;
-use App\Entity\Show;
-use App\Entity\Torrent\ShowTorrent;
-use App\Service\EpisodeService;
-use App\Service\TorrentService;
 use App\Spider\Dto\ForumDto;
 use App\Spider\Dto\TopicDto;
 use GuzzleHttp\Client;
 use GuzzleHttp\Cookie\FileCookieJar;
 use GuzzleHttp\RequestOptions;
-use Psr\Log\LoggerInterface;
 use Symfony\Component\DomCrawler\Crawler;
 
 class NnmClub extends AbstractSpider
 {
     public const BASE_URL = 'https://nnmclub.to/forum/';
+
+    public const BASE_URL_TOR = 'http://nnmclub2vvjqzjne6q4rrozkkkdmlvnrcsyes2bbkm7e5ut2aproy4id.onion/forum/';
 
     private const PAGE_SIZE = 50;
 
@@ -30,12 +25,26 @@ class NnmClub extends AbstractSpider
     /** @var Client */
     private $client;
 
-    public function __construct()
+    public function __construct(string $torProxy)
     {
         $this->client = new Client([
-            'base_uri' => self::BASE_URL,
-            RequestOptions::TIMEOUT => 10,
+            'base_uri' => $this->useTor() ? self::BASE_URL_TOR : self::BASE_URL,
+            RequestOptions::TIMEOUT => $this->useTor() ? 30 : 10,
+            RequestOptions::PROXY => $this->useTor() ? $torProxy : '',
+            RequestOptions::HEADERS => [
+                'Accept-Encoding' => 'gzip',
+                'User-Agent' => 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36',
+            ],
+            'curl' => [
+                CURLOPT_PROXYTYPE => CURLPROXY_SOCKS5_HOSTNAME
+            ],
+            'cookies' => new FileCookieJar(sys_get_temp_dir() . '/nnmclub.cookie.json', true),
         ]);
+    }
+
+    public function useTor(): bool
+    {
+        return true;
     }
 
     public function getSource(BaseTorrent $torrent): string
@@ -243,7 +252,6 @@ class NnmClub extends AbstractSpider
         $resp = $this->client->get(
             'login.php',
             [
-                'cookies' => new FileCookieJar(sys_get_temp_dir() . '/nnmclub.cookie.json', true),
                 'query' => [
                     'redirect' => 'viewtopic.php?t=' . $topic->id,
                 ]
@@ -262,7 +270,6 @@ class NnmClub extends AbstractSpider
             $resp = $this->client->post(
                 'login.php',
                 [
-                    'cookies' => new FileCookieJar(sys_get_temp_dir() . '/nnmclub.cookie.json', true),
                     'form_params' => $f->getPhpValues()
                 ]
             );

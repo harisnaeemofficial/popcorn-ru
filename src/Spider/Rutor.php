@@ -45,6 +45,7 @@ class Rutor extends AbstractSpider
             1, // Зарубежные фильмы
             4, // Зарубежные сериалы
             7, // Мультипликация
+            10, // Аниме
         ];
     }
 
@@ -192,12 +193,12 @@ class Rutor extends AbstractSpider
             function (Crawler $c) {
                 $name = trim($c->filter('td')->first()->text());
                 preg_match('#\((\d+)\)#', $c->filter('td')->last()->html(), $m);
+                if (empty($m[1])) {
+                    return false;
+                }
                 $size = $m[1];
                 if (!$name) {
                     $this->logger->error('Files parsing error', $this->context + ['html' => $c->html()]);
-                }
-                if ($size === '') {
-                    return false;
                 }
 
                 return new File($name, (int) $size);

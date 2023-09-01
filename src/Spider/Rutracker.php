@@ -37,7 +37,7 @@ class Rutracker extends AbstractSpider
     public function __construct(string $torProxy)
     {
         $this->client = new Client([
-            'base_uri' =>  $this->useTor() ? self::BASE_URL_TOR : self::BASE_URL,
+            'base_uri' =>  $this->useTor() ? self::BASE_URL : self::BASE_URL, // tor site dead now
             RequestOptions::TIMEOUT => $this->useTor() ? 30 : 10,
             RequestOptions::PROXY => $this->useTor() ? $torProxy : '',
             RequestOptions::HEADERS => [
@@ -76,7 +76,6 @@ class Rutracker extends AbstractSpider
     {
         return [
             // кино-говно.com
-            934, //Азиатское кино
             505, //Идийское кино
             1235, //Грайндхаус
             2459, //короткометражки
@@ -311,12 +310,10 @@ class Rutracker extends AbstractSpider
 
     private function getImdbByTitle(string $titleStr): ?string
     {
-        $titleStr = preg_replace('#\(.*?\)#', '', $titleStr);
-        preg_match('#^(.*)\[(\d{4}).*\]#', $titleStr, $match);
-        if (count($match) != 3) {
-            return null;
-        }
-        $titles = array_map('trim', explode('/', $match[1]));
+        preg_match('#^(.*)\[(\d{4})[^p].*?\]#', $titleStr, $match);
+        $titleStr = preg_replace('#\(.*?\).*#', '', $titleStr);
+        $titleStr = preg_replace('#\[.*?\]#', '', $titleStr);
+        $titles = array_map('trim', explode('/', $titleStr));
         $year = (int)$match[2];
 
         $names = [];
@@ -334,10 +331,13 @@ class Rutracker extends AbstractSpider
         $names = array_filter(array_map('trim', $names));
 
         foreach ($names as $name) {
-            $imdb = $isSerial
-                ? $this->torrentService->searchShowByTitle($name)
-                : $this->torrentService->searchMovieByTitleAndYear($name, $year)
-            ;
+            $imdb = false;
+            if (!$isSerial) {
+                $imdb = $this->torrentService->searchMovieByTitleAndYear($name, $year);
+            }
+            if (!$imdb) {
+                $imdb = $this->torrentService->searchShowByTitle($name);
+            }
             if ($imdb) {
                 return $imdb;
             }

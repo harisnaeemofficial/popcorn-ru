@@ -3,6 +3,7 @@
 namespace App\Service;
 
 use App\Entity\BaseMedia;
+use App\Entity\Episode;
 use App\Entity\Movie;
 use App\Entity\Show;
 use App\Entity\Torrent\BaseTorrent;
@@ -139,7 +140,7 @@ class TorrentService
         }
         $media = $torrent->getMedia();
         if ($media->getLastActiveCheck()->diff(new DateTime())->days > 3) {
-            $this->selectActive($media, $torrent->getLanguage());
+            $this->selectActive($media, $torrent->getLanguage(), false);
         }
     }
 
@@ -158,6 +159,7 @@ class TorrentService
     {
         /** @var BaseTorrent[] $active */
         $active = [];
+        $this->torrentRepo->clearTorrentsCache($movie->getId());
         foreach ($this->torrentRepo->getMediaTorrents($movie, [$language], $onlyActive) as $torrent) {
             $torrent->setActive(false);
             if (empty($active[$torrent->getQuality()])
@@ -175,7 +177,10 @@ class TorrentService
     {
         /** @var BaseTorrent[][] $active */
         $active = [];
+        $this->torrentRepo->clearTorrentsCache($show->getId());
         foreach ($show->getEpisodes() as $episode) {
+            /** @var Episode $episode */
+            $this->torrentRepo->clearTorrentsCache($episode->getId());
             $key = $episode->getSeason() . ':' . $episode->getEpisode();
             foreach ($this->torrentRepo->getEpisodeTorrents($episode, [$language], $onlyActive) as $torrent) {
                 $torrent->setActive(false);
