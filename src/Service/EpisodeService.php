@@ -44,68 +44,24 @@ class EpisodeService
         }
     }
 
-    protected array $showCache = [];
-    
     public function getEpisode(Show $show, int $s, int $e): ?Episode
     {
-        $item = null;
         foreach ($show->getEpisodes() as $episode) {
             if ($episode->getSeason() === $s && $episode->getEpisode() === $e) {
-                $item = $episode;
-                break;
+                return $episode;
             }
         }
-        if (!$item) {
-            $item = new Episode();
-            $item
-                ->setShow($show)
-                ->setSeason($s)
-                ->setEpisode($e)
-            ;
-        }
 
-        $key = $show->getImdb().':'.$s;
-        if (empty($this->showCache[$key])) {
-            $this->showCache[$key] = $this->mediaInfo
-                ->getSeasonEpisodes($show, $s);
-        }
-        $found = false;
-        foreach ($this->showCache[$key] as $episodeInfo) {
-            if ($episodeInfo['episode_number'] == $e) {
-                // Hack for unknown tvdbID in track
-                // tvdbID now is primary key on client
-                if ($item->getTvdb() <= 0) {
-                    try {
-                        $trakt = $this->trakt->get("shows/{$show->getImdb()}/seasons/{$s}/episodes/{$e}");
-                        $item->setTvdb($trakt->ids->tvdb ?? -$trakt->ids->trakt ?? 0);
-                    } catch (\Exception $exception) {
-                        $this->logger->error($exception->getMessage());
-                    }
-                }
-                // if (!$item->getTvdb()) {
-                //     continue;
-                // }
-
-                $item
-                    ->setTitle($episodeInfo['name'] ?: '')
-                    ->setOverview($episodeInfo['overview'] ?: '')
-                    ->setFirstAired((new \DateTime($episodeInfo['air_date'] ?? 'now'))->getTimestamp())
-                ;
-                $found = true;
-            }
-        }
-        if (!$found) {
-            return null;
-        }
-
+        $item = new Episode();
+        $item
+            ->setShow($show)
+            ->setSeason($s)
+            ->setEpisode($e)
+        ;
         $this->em->persist($item);
-        $show->addEpisode($item);
-        $this->em->flush();
 
-        if ($this->localeService->needFillEpisode($item)) {
-            $translations = $this->mediaInfo->getEpisodeTranslations($show, $s, $e);
-            $this->localeService->fillEpisode($item, $translations);
-        }
+        $show->addEpisode($item);
+        $this->mediaInfo->updateEpisode($item);
 
         $this->em->flush();
 
@@ -148,7 +104,7 @@ class EpisodeService
 
         $th = '-?(?:th)?';
         $season = '(?:сезон|season|sezon)';
-        $episode = '(?:серия|episode|ser[iyj]+a)';
+        $episode = '(?:серия|episode|ser[iyj]+a|part)';
 
         //S - EE серия
         if (preg_match('#(\d+) ?- ?(\d+) '.$episode.'#iu', $file, $m)) {
@@ -192,6 +148,7 @@ class EpisodeService
                 '#\s+e(\d+)#i', //S01 E01
                 '#(?:\s|^)(\d+)(?:\s|$)#iu', // ' 01 '
                 '#\((\d+)\s+(?:iz|of)\s+(?:\d+)\)#iu', // (01x01)
+                '#\spart\s+(\d+)\s#iu', // part N
             ];
             foreach($patterns as $pattern) {
                 if (preg_match($pattern, $file, $m)) {

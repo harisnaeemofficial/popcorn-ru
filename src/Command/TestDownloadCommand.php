@@ -2,9 +2,9 @@
 
 namespace App\Command;
 
+use App\Processors\DownloadTorrentProcessor;
 use App\Processors\ShowTorrentProcessor;
 use App\Processors\TopicProcessor;
-use App\Processors\TorrentActiveProcessor;
 use App\Service\MediaService;
 use Enqueue\Null\NullContext;
 use Interop\Amqp\Impl\AmqpMessage;
@@ -17,17 +17,19 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Contracts\Service\Attribute\Required;
 
 #[AsCommand(
-    name: 'test:active',
-    description: 'Link files to episodes',
+    name: 'test:download',
+    description: 'Download torrent file',
 )]
-class TestActiveCommand extends Command
+class TestDownloadCommand extends Command
 {
-    #[Required] public TorrentActiveProcessor $processor;
+    #[Required] public DownloadTorrentProcessor $processor;
 
     protected function configure()
     {
         $this
+            ->addArgument('spider', InputArgument::REQUIRED, 'Spider')
             ->addArgument('id', InputArgument::REQUIRED, 'Id')
+            ->addArgument('downloadId', InputArgument::REQUIRED, 'Id')
         ;
     }
 
@@ -35,7 +37,9 @@ class TestActiveCommand extends Command
     {
         $this->processor->process(
             new AmqpMessage(json_encode([
+                'spider' => $input->getArgument('spider'),
                 'torrentId' => $input->getArgument('id'),
+                'downloadId' => $input->getArgument('downloadId'),
             ])),
             new NullContext()
         );

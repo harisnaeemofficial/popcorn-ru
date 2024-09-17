@@ -12,18 +12,6 @@
             "config/routes/metrics.yaml"
         ]
     },
-    "doctrine/annotations": {
-        "version": "1.13",
-        "recipe": {
-            "repo": "github.com/symfony/recipes",
-            "branch": "main",
-            "version": "1.0",
-            "ref": "a2759dd6123694c8d901d0ec80006e044c2e6457"
-        },
-        "files": [
-            "config/routes/annotations.yaml"
-        ]
-    },
     "doctrine/deprecations": {
         "version": "v0.5.3"
     },
@@ -157,11 +145,35 @@
     "php-http/cache-plugin": {
         "version": "1.7.1"
     },
+    "php-http/discovery": {
+        "version": "1.19",
+        "recipe": {
+            "repo": "github.com/symfony/recipes",
+            "branch": "main",
+            "version": "1.18",
+            "ref": "f45b5dd173a27873ab19f5e3180b2f661c21de02"
+        },
+        "files": [
+            "config/packages/http_discovery.yaml"
+        ]
+    },
     "php-tmdb/symfony": {
         "version": "4.0.x-dev"
     },
     "phpstan/phpdoc-parser": {
         "version": "1.2.0"
+    },
+    "phpstan/phpstan": {
+        "version": "1.10",
+        "recipe": {
+            "repo": "github.com/symfony/recipes-contrib",
+            "branch": "main",
+            "version": "1.0",
+            "ref": "5e490cc197fb6bb1ae22e5abbc531ddc633b6767"
+        },
+        "files": [
+            "phpstan.dist.neon"
+        ]
     },
     "psr/simple-cache": {
         "version": "1.0.1"
@@ -274,12 +286,6 @@
     },
     "symfony/password-hasher": {
         "version": "v5.3.0"
-    },
-    "symfony/polyfill-php72": {
-        "version": "v1.24.0"
-    },
-    "symfony/polyfill-php81": {
-        "version": "v1.23.0"
     },
     "symfony/proxy-manager-bridge": {
         "version": "v5.2.4"

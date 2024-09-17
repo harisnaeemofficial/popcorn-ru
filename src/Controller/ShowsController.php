@@ -8,32 +8,21 @@ use App\Repository\MediaStatRepository;
 use App\Repository\ShowRepository;
 use App\Request\LocaleRequest;
 use App\Request\PageRequest;
-use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Annotation\Route;
-use Symfony\Component\Serializer\Encoder\JsonEncode;
 use Symfony\Component\Serializer\SerializerInterface;
+use Symfony\Contracts\Service\Attribute\Required;
 
 class ShowsController extends AbstractController
 {
-    /** @required */
-    public ShowRepository $repo;
+    #[Required] public ShowRepository $repo;
+    #[Required] public EpisodeRepository $episodeRepo;
+    #[Required] public MediaStatRepository $statRepo;
+    #[Required] public SerializerInterface $serializer;
 
-    /** @required */
-    public EpisodeRepository $episodeRepo;
-
-    /** @required */
-    public MediaStatRepository $statRepo;
-
-    /** @required */
-    public SerializerInterface $serializer;
-
-    /**
-     * @Route("/shows/stat", name="shows_stat")
-     * @ParamConverter(name="localeParams", converter="locale_params")
-     */
+    #[Route("/shows/stat", name: "shows_stat")]
     public function stat(LocaleRequest $localeParams)
     {
         $stat = $this->statRepo->getByTypeAndLang('show', $localeParams->bestContentLocale);
@@ -52,11 +41,7 @@ class ShowsController extends AbstractController
         return new CacheJsonResponse($data, false);
     }
 
-    /**
-     * @Route("/shows/{page}", name="shows_page", requirements={"page"="\d+"})
-     * @ParamConverter(name="pageParams", converter="page_params")
-     * @ParamConverter(name="localeParams", converter="locale_params")
-     */
+    #[Route("/shows/{page}", name: "shows_page", requirements: ["page" => "\d+"])]
     public function page(PageRequest $pageParams, LocaleRequest $localeParams, Request $r)
     {
         $shows = $this->repo->getPage($pageParams, $localeParams, (bool)$r->get('anime'));
@@ -66,10 +51,7 @@ class ShowsController extends AbstractController
         return new CacheJsonResponse($data, true);
     }
 
-    /**
-     * @Route("/show/{id}", name="show")
-     * @ParamConverter(name="localeParams", converter="locale_params")
-     */
+    #[Route("/show/{id}", name: "show")]
     public function show($id, LocaleRequest $localeParams)
     {
         $show = $this->repo->findByImdb($id);
@@ -82,10 +64,7 @@ class ShowsController extends AbstractController
         return new CacheJsonResponse($data, true);
     }
 
-    /**
-     * @Route("/show/{id}/torrents", name="show_torrents")
-     * @ParamConverter(name="localeParams", converter="locale_params")
-     */
+    #[Route("/show/{id}/torrents", name: "show_torrents")]
     public function torrents($id, LocaleRequest $localeParams)
     {
         $show = $this->repo->findByImdb($id);
@@ -102,10 +81,7 @@ class ShowsController extends AbstractController
         return new CacheJsonResponse($data, true);
     }
 
-    /**
-     * @Route("/show/{id}/{season}/{episode}/torrents", name="show_episode_torrents")
-     * @ParamConverter(name="localeParams", converter="locale_params")
-     */
+    #[Route("/show/{id}/{season}/{episode}/torrents", name: "show_episode_torrents")]
     public function episodeTorrents($id, $season, $episode, LocaleRequest $localeParams)
     {
         $show = $this->repo->findByImdb($id);

@@ -5,28 +5,19 @@ namespace App\Controller;
 use App\Repository\MovieRepository;
 use App\Repository\ShowRepository;
 use App\Request\LocaleRequest;
-use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
-use Symfony\Component\Serializer\Encoder\JsonEncode;
 use Symfony\Component\Serializer\SerializerInterface;
+use Symfony\Contracts\Service\Attribute\Required;
 
 class RandomController extends AbstractController
 {
-    /** @required */
-    public MovieRepository $movieRepo;
+    #[Required] public MovieRepository $movieRepo;
+    #[Required] public ShowRepository $showRepo;
+    #[Required] public SerializerInterface $serializer;
 
-    /** @required */
-    public ShowRepository $showRepo;
-
-    /** @required */
-    public SerializerInterface $serializer;
-
-    /**
-     * @Route("/random/movie", name="random_movie")
-     * @ParamConverter(name="localeParams", converter="locale_params")
-     */
+    #[Route("/random/movie", name: "random_movie")]
     public function movie(LocaleRequest $localeParams)
     {
         $movie = $this->movieRepo->getRandom();
@@ -36,10 +27,7 @@ class RandomController extends AbstractController
         return new Response($data, 200, ['Content-Type' => 'application/json']);
     }
 
-    /**
-     * @Route("/random/show", name="random_show")
-     * @ParamConverter(name="localeParams", converter="locale_params")
-     */
+    #[Route("/random/show", name: "random_show")]
     public function show(LocaleRequest $localeParams)
     {
         $show = $this->showRepo->getRandom();

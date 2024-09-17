@@ -7,28 +7,19 @@ use App\Repository\MediaStatRepository;
 use App\Repository\MovieRepository;
 use App\Request\LocaleRequest;
 use App\Request\PageRequest;
-use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Annotation\Route;
-use Symfony\Component\Serializer\Encoder\JsonEncode;
 use Symfony\Component\Serializer\SerializerInterface;
+use Symfony\Contracts\Service\Attribute\Required;
 
 class MoviesController extends AbstractController
 {
-    /** @required */
-    public MovieRepository $repo;
+    #[Required] public MovieRepository $repo;
+    #[Required] public MediaStatRepository $statRepo;
+    #[Required] public SerializerInterface $serializer;
 
-    /** @required */
-    public MediaStatRepository $statRepo;
-
-    /** @required */
-    public SerializerInterface $serializer;
-
-    /**
-     * @Route("/movies/stat", name="movies_stat")
-     * @ParamConverter(name="localeParams", converter="locale_params")
-     */
+    #[Route("/movies/stat", name: "movies_stat")]
     public function stat(LocaleRequest $localeParams)
     {
         $stat = $this->statRepo->getByTypeAndLang('movie', $localeParams->bestContentLocale);
@@ -47,11 +38,7 @@ class MoviesController extends AbstractController
         return new CacheJsonResponse($data, false);
     }
 
-    /**
-     * @Route("/movies/{page}", name="movies_page", requirements={"page"="\d+"})
-     * @ParamConverter(name="pageParams", converter="page_params")
-     * @ParamConverter(name="localeParams", converter="locale_params")
-     */
+    #[Route("/movies/{page}", name: "movies_page", requirements: ["page" => "\d+"])]
     public function page(PageRequest $pageParams, LocaleRequest $localeParams)
     {
         $movies = $this->repo->getPage($pageParams, $localeParams);
@@ -61,10 +48,7 @@ class MoviesController extends AbstractController
         return new CacheJsonResponse($data, true);
     }
 
-    /**
-     * @Route("/movie/{id}", name="movie")
-     * @ParamConverter(name="localeParams", converter="locale_params")
-     */
+    #[Route("/movie/{id}", name: "movie")]
     public function movie($id, LocaleRequest $localeParams)
     {
         $movie = $this->repo->findByImdb($id);
@@ -77,10 +61,7 @@ class MoviesController extends AbstractController
         return new CacheJsonResponse($data, true);
     }
 
-    /**
-     * @Route("/movie/{id}/torrents", name="movie_torrents")
-     * @ParamConverter(name="localeParams", converter="locale_params")
-     */
+    #[Route("/movie/{id}/torrents", name: "movie_torrents")]
     public function torrents($id, LocaleRequest $localeParams)
     {
         $movie = $this->repo->findByImdb($id);
